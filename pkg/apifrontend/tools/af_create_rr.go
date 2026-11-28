@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/google/uuid"
 	"golang.org/x/sync/singleflight"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -19,6 +18,7 @@ import (
 	"github.com/jordigilh/kubernaut/pkg/apifrontend/validate"
 	gwtypes "github.com/jordigilh/kubernaut/pkg/gateway/types"
 	"github.com/jordigilh/kubernaut/pkg/shared/cancellation"
+	"github.com/jordigilh/kubernaut/pkg/shared/rrname"
 	"github.com/jordigilh/kubernaut/pkg/shared/scope"
 )
 
@@ -510,11 +510,7 @@ func createOrReuseRR(ctx context.Context, d *ToolDeps, req createRRRequest, hook
 // buildRRObject constructs the RemediationRequest CRD to be created for a new
 // (non-duplicate) signal.
 func buildRRObject(controllerNS string, args *CreateRRArgs, fingerprint, signalName, resolvedSeverity string, triageResult *severity.TriageResult) *remediationv1.RemediationRequest {
-	fpPrefix := fingerprint
-	if len(fpPrefix) > 12 {
-		fpPrefix = fpPrefix[:12]
-	}
-	rrName := fmt.Sprintf("rr-%s-%s", fpPrefix, uuid.New().String()[:8])
+	rrName := rrname.New(fingerprint)
 	nowTime := metav1.Now()
 
 	rrObj := &remediationv1.RemediationRequest{

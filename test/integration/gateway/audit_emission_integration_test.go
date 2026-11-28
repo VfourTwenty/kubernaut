@@ -261,8 +261,8 @@ var _ = Describe("Gateway Audit Event Emission", Label("audit", "integration"), 
 				correlationID2 := response2.RemediationRequestName
 
 				By("2. Validate correlation ID format")
-				// BR-GATEWAY-055: Format: rr-{12-char-hex-fingerprint}-{8-char-hex-uuid}
-				// Per DD-AUDIT-CORRELATION-002: UUID suffix guarantees zero collision risk
+				// BR-GATEWAY-055: Format: rr-{12-char-hex-fingerprint}-{12-char-hex-uuid}
+				// Per DD-AUDIT-CORRELATION-002: 48-bit random suffix, ~2^-48 collision odds per pair
 				// This enables fingerprint extraction for deduplication
 				correlationIDPattern := `^rr-[a-f0-9]{12}-[a-f0-9]{12}$`
 				Expect(correlationID1).To(MatchRegexp(correlationIDPattern),

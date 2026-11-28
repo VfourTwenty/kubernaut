@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	remediationv1alpha1 "github.com/jordigilh/kubernaut/api/remediation/v1alpha1"
@@ -34,6 +33,7 @@ import (
 	"github.com/jordigilh/kubernaut/pkg/gateway/types"
 	"github.com/jordigilh/kubernaut/pkg/shared/cancellation"
 	sharedK8s "github.com/jordigilh/kubernaut/pkg/shared/k8s"
+	"github.com/jordigilh/kubernaut/pkg/shared/rrname"
 )
 
 // RetryObserver is notified on each failed CRD creation retry attempt.
@@ -176,7 +176,7 @@ func (c *CRDCreator) CreateRemediationRequest(
 		return nil, err
 	}
 
-	crdName := generateCRDName(signal.Fingerprint)
+	crdName := rrname.New(signal.Fingerprint)
 	rr := c.buildRemediationRequestCRD(crdName, signal)
 
 	// Create CRD in Kubernetes with retry logic
@@ -199,21 +199,6 @@ func (c *CRDCreator) CreateRemediationRequest(
 		"signal_name", signal.SignalName)
 
 	return rr, nil
-}
-
-// generateCRDName builds a unique CRD name per DD-AUDIT-CORRELATION-002:
-// rr-{fingerprint-prefix[:12]}-{uuid-hex[:12]}. The fingerprint prefix gives
-// human-readable correlation for debugging; the suffix is the first 12 hex
-// chars of a random UUID (48 bits, dashes removed), so two occurrences of the
-// same signal only collide with probability ~2^-48 per pair. Supersedes DD-015
-// (timestamp-based naming). Extracted from CreateRemediationRequest (funlen).
-func generateCRDName(fingerprint string) string {
-	fingerprintPrefix := fingerprint
-	if len(fingerprintPrefix) > 12 {
-		fingerprintPrefix = fingerprintPrefix[:12]
-	}
-	shortUUID := strings.ReplaceAll(uuid.New().String(), "-", "")[:12]
-	return fmt.Sprintf("rr-%s-%s", fingerprintPrefix, shortUUID)
 }
 
 // buildRemediationRequestCRD constructs the RemediationRequest object (not
